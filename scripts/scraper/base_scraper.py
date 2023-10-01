@@ -80,6 +80,7 @@ class Scraper:
             while len(os.listdir(self.download_path)) > self.max_files_in_download_path:
                 time.sleep(10)
 
+        self._save_already_downloaded_url(url)
         try:
             filename = url[url.rindex('/')+1:]
             _, file_extension = os.path.splitext(filename)

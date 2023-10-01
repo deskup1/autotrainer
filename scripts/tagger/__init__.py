@@ -1,0 +1,1 @@
+from . import wd14_tagger
