@@ -1,0 +1,2 @@
+50, absurdres, -ai_generated
+50, highres, -ai_generated

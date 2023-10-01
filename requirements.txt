@@ -1,0 +1,8 @@
+onnxruntime-gpu
+opencv-python
+huggingface_hub
+transformers
+piexif
+pandas
+difPy
+booru
