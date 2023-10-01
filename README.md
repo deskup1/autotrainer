@@ -1,7 +1,7 @@
 # autotrainer
 ## How to use
 ### Setup environment
-To start any of scripts you need to prepare venv environment. To setup environment, run either setup-env.sh or setup-envv-windows.sh
+To start any of scripts you need to prepare venv environment. To setup environment, run either `setup-env.sh` or `setup-env-windows.sh`
 
 ### Image scraping
 To start with image scraping, paste your tags separated by ',' in prompts.txt file.
