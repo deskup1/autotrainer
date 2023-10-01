@@ -4,16 +4,16 @@
 To start any of scripts you need to prepare venv environment. To setup environment, run either `setup-env.sh` or `setup-env-windows.sh`
 
 ### Image scraping
-To start with image scraping, paste your tags separated by ',' in prompts.txt file.
+To start with image scraping, paste your tags separated by ',' in `prompts.txt` file.
 At the start of each line specify how many images should be downloaded per iteration.
 
 To start scraping images, run any of scraper .sh file.
 You can also specify other booru scrapers by calling
 `python scripts/autoscraper.py "YourScraperName"`
 
-List of available scrapers are visible in autoscraper.py file
+List of available scrapers are visible in `autoscraper.py` file
 
-Your images should start to appear in images/download folder.
+Your images should start to appear in `images/download` folder.
 
 ### Image aesthetic classification
 To filter out ugly images, use `start-aesthetic-classifier.sh` script
