@@ -48,4 +48,7 @@ By changing `default_tag_weight` in `autotagger.py` file, you will change defaul
 
 `autotagger.py` is adding weights from all taggers and tags from booru and then keeping only ones which have score higher than `min_tag_treshold`
 
+### Removing duplicates
+TODO
+You can check out old-scripts/duplicates.py 
 
