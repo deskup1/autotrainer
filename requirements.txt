@@ -6,3 +6,4 @@ piexif
 pandas
 difPy
 booru
+praw
