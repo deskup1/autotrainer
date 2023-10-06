@@ -31,6 +31,4 @@ class AnimeAestheticClassifier(AestheticClassifier):
         img_input = img_input[np.newaxis, :]
         pred = self.anime_aesthetic.run(None, {"img": img_input})[0].item()
 
-        print(self.repo_id + " - " + image_path + ":" + str(pred))
-
         return pred

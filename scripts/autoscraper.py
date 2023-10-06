@@ -1,54 +1,113 @@
 from scraper.booru_scraper import BooruScraper
+from scraper.reddit_scrapper import RedditScraper
 import booru
 import sys
 import os
-db_path = "already-downloaded-urls"
-prompts_file = "prompts.txt"
+
+import argparse
+parser = argparse.ArgumentParser(
+    prog="AutoScraper",
+    description="Scrape images from multiple sities, filter out unaesthetic images, tag them."
+)
+
+parser.add_argument('scraper', help="name of the parser", type=str)
+parser.add_argument("--prompts_file", help="path to file containing prompts", type=str, default="prompts.txt")
+parser.add_argument("--db_file", help="path to db file", type=str, default=None)
+parser.add_argument("--use_aesthetic", help="use scraper with aesthetic filter", action='store_true')
+parser.add_argument("--aesthetic_anime_aesthetic_treshold", help="anime_aesthetic filter pass treshold (default:0.775)", type=float, default=0.775)
+parser.add_argument("--aesthetic_cafeai_pass_treshold", help="anime_aesthetic filter pass treshold (default:0.9)", type=float, default=0.9)
+parser.add_argument("--use_tagger", help="use scraper with tagger", action='store_true')
+parser.add_argument("--looped", help="run scraper in a loop", action='store_true')
+parser.add_argument("--prepend_prompt_tags", help="prepend tags from prompt file at the start of the caret file", action='store_true')
+parser.add_argument("--skip_tags", help="don't add downloaded tags", action='store_true')
+parser.add_argument("--use_urllib", help="use urllib library instead requests library for downloading images", action='store_true')
+parser.add_argument("--reddit_app_id", help="reddit app id needed when using Reddit scraper", type=str, default=None)
+parser.add_argument("--reddit_app_key", help="reddit app key needed when using Reddit scraper", type=str, default=None)
 
 if __name__ == "__main__":
 
-    if len(sys.argv) == 1:
-        print("Booru not specified")
+    args = parser.parse_args()
+
+    booru_name = args.scraper
+    if args.db_file is None:
+        args.db_file = os.path.join("already-downloaded-urls", booru_name + ".txt")
+
+
+    file_postproccesors = []
+    if args.use_aesthetic:
+        print("Setup autoaesthetic with tresholds " + str([args.aesthetic_anime_aesthetic_treshold, args.aesthetic_cafeai_pass_treshold]))
+        import autoaesthetic
+        autoaesthetic.target_folder = None
+        autoaesthetic.anime_aesthetic_pass_treshold = float(args.aesthetic_anime_aesthetic_treshold)
+        autoaesthetic.cafeai_pass_treshold = float(args.aesthetic_cafeai_pass_treshold)
+        file_postproccesors.append(autoaesthetic.classify_image)
     
-    booru_name = sys.argv[1]
-    scraper = {}
+    if args.use_tagger:
+        print("Setup autotagger")
+        import autotagger
+        autotagger.target_folder = None
+        file_postproccesors.append(autotagger.tag_image)
+    
+    booru_obj = {}
     if booru_name == "Atfbooru":
-        scraper = BooruScraper(booru.Atfbooru(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Atfbooru()
     elif booru_name == "Behoimi":
-        scraper = BooruScraper(booru.Behoimi(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Behoimi()
     elif booru_name == "Danbooru":
-        scraper = BooruScraper(booru.Danbooru(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Danbooru()
+        args.use_urllib = True
     elif booru_name == "Derpibooru":
-        scraper = BooruScraper(booru.Derpibooru(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Derpibooru(), 
     elif booru_name == "E621":
-        scraper = BooruScraper(booru.E621(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.E621()
     elif booru_name == "E926":
-        scraper = BooruScraper(booru.E926(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.E926()
     elif booru_name == "Furbooru":
-        scraper = BooruScraper(booru.Furbooru(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Furbooru()
     elif booru_name == "Gelbooru":
-        scraper = BooruScraper(booru.Gelbooru(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Gelbooru()
     elif booru_name == "Hypnohub":
-        scraper = BooruScraper(booru.Hypnohub(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Hypnohub()
     elif booru_name == "Konachan":
-        scraper = BooruScraper(booru.Konachan(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Konachan()
     elif booru_name == "Konachan_Net":
-        scraper = BooruScraper(booru.Konachan_Net(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Konachan_Net()
     elif booru_name == "Lolibooru":
-        scraper = BooruScraper(booru.Lolibooru(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Lolibooru()
     elif booru_name == "Paheal":
-        scraper = BooruScraper(booru.Paheal(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Paheal()
     elif booru_name == "Realbooru":
-        scraper = BooruScraper(booru.Realbooru(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Realbooru()
     elif booru_name == "Rule34":
-        scraper = BooruScraper(booru.Rule34(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Rule34()
     elif booru_name == "Safebooru":
-        scraper = BooruScraper(booru.Safebooru(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Safebooru()
     elif booru_name == "Xbooru":
-        scraper = BooruScraper(booru.Xbooru(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Xbooru()
     elif booru_name == "Yandere":
-        scraper = BooruScraper(booru.Yandere(), os.path.join(db_path, booru_name + ".txt"), prompts_file)
+        booru_obj = booru.Yandere()
+    elif booru_name == "Reddit":
+        scraper = RedditScraper(args.db_file, args.prompts_file, 
+                                file_postprocessors=file_postproccesors,
+                                prepend_prompt_tags=args.prepend_prompt_tags,
+                                app_id=args.reddit_app_id,
+                                app_key=args.reddit_app_key,
+                                use_urllib=args.use_urllib)
+        if args.looped:
+            scraper.start()
+        else:
+            scraper.scrape()
+        exit()
     else:
         print(booru_name + " is not supported")
         exit()
-    scraper.start()
+
+    scraper = BooruScraper(booru_obj, args.db_file, args.prompts_file, 
+                           file_postprocessors=file_postproccesors,
+                           prepend_prompt_tags=args.prepend_prompt_tags,
+                           skip_tags=args.skip_tags,
+                           use_urllib=args.use_urllib)
+    if args.looped:
+        scraper.start()
+    else:
+        scraper.scrape()

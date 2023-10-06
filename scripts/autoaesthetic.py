@@ -6,10 +6,12 @@ from aesthetic.anime_aesthetic_classifier import AnimeAestheticClassifier
 from aesthetic.hf_pipeline_aesthetic_classifier import HfPipelineAestheticClassifier
 from aesthetic.base_aesthetic_classifier import AestheticClassifier
 
-anime_aesthetic_pass_treshold = 0.78
+from scraper.base_scraper import save_tags_for_file, get_tags_for_file
+
+anime_aesthetic_pass_treshold = 0.9
 anime_aesthetic_quality_tresholds = [
-    (1, 0.93, "best quality"), 
-    (0.93, 0.89, "good quality"),
+    (1, 0.96, "best quality"), 
+    (0.96, 0.90, "good quality"),
     (0.60, 0.50, "bad quality"),
     (0.50, 0.00, "worst quality"),
     ]
@@ -24,13 +26,17 @@ supported_extensions = [".jpeg", ".jpg", ".png"]
 
 max_files_in_target_path = 100
 
+_lazy_classifiers = None
+def _get_classifiers():
+    global _lazy_classifiers
+    if _lazy_classifiers is None:
+        _lazy_classifiers = [
+            (AnimeAestheticClassifier(), anime_aesthetic_pass_treshold, anime_aesthetic_quality_tresholds),
+            (HfPipelineAestheticClassifier("cafeai/cafe_aesthetic"), cafeai_pass_treshold, cafeai_aesthetic_quality_tresholds)
+    ]
+    return _lazy_classifiers
 
-classifiers = [
-    (AnimeAestheticClassifier(), anime_aesthetic_pass_treshold, anime_aesthetic_quality_tresholds),
-    (HfPipelineAestheticClassifier("cafeai/cafe_aesthetic"), cafeai_pass_treshold, cafeai_aesthetic_quality_tresholds)
-]
-
-def classify_image(path: str):
+def classify_image(path: str, additional_tags = []):
     if os.path.isfile(path) == False:
         return
     
@@ -42,15 +48,19 @@ def classify_image(path: str):
 
     caret_path = path[0:path.rindex('.')] + ".txt"
 
-    additional_tags = []
-    for classifier in classifiers:
+    scores = []
+    quality_tags = []
+
+    for classifier in _get_classifiers():
         pipeline: AestheticClassifier = classifier[0]
         pass_score = classifier[1]
         tresholds = classifier[2]
 
         score = pipeline.score(path)
+        scores.append(score)
 
         if score < pass_score:
+            print(str(scores) + " fail, score needed: " + str(pass_score) + " - "+ path)
             if trash_folder is not None:
                 if os.path.isfile(path) == True:
                     shutil.move(path, os.path.join(trash_folder, os.path.basename(path)))
@@ -63,25 +73,27 @@ def classify_image(path: str):
                     os.remove(caret_path)
             return score
         
+
         for treshold in tresholds:
             if score <= treshold[0] and score > treshold[1]:
-                additional_tags.append(treshold[2])
+                print(str(score) + "<=" + str(treshold[0]) + " and " + str(score) + ">" + str(treshold[1]) )
+                quality_tags.append(treshold[2])
 
-    if os.path.isfile(caret_path):
-        with open(caret_path, 'r+') as f:
-            content = ", ".join(additional_tags) + ", " + f.read()
-            f.seek(0, 0)
-            f.write(content)
+    print(str(scores) + " pass: " + path)
 
-    if os.path.isfile(caret_path) == True:
-        shutil.move(caret_path, os.path.join(target_folder, os.path.basename(caret_path)))
-    if os.path.isfile(path) == True:
-        shutil.move(path, os.path.join(target_folder, os.path.basename(path)))
+    if len(quality_tags) > 0:
+        tags = get_tags_for_file(caret_path)
+        if tags is None:
+            tags = []
+        tags = tags + quality_tags + additional_tags
+        save_tags_for_file(tags, caret_path)
 
-    message = "Image passed: " + path 
-    if len(additional_tags) > 0:
-        message + " with additional tags [" + ", ".join(additional_tags) + "]"
-    print(message)
+    if target_folder is not None:
+        if os.path.isfile(caret_path) == True:
+            shutil.move(caret_path, os.path.join(target_folder, os.path.basename(caret_path)))
+        if os.path.isfile(path) == True:
+            shutil.move(path, os.path.join(target_folder, os.path.basename(path)))
+
 
 def classify():
     for folder in source_folders:
@@ -90,7 +102,7 @@ def classify():
 
         for item in os.listdir(folder):
 
-            if (len(os.listdir(target_folder))) > max_files_in_target_path:
+            if target_folder is not None and (len(os.listdir(target_folder))) > max_files_in_target_path:
                 print("Exceed maximum number of files in target folder, sleeping")
                 while len(os.listdir(target_folder)) > max_files_in_target_path:
                     time.sleep(10)

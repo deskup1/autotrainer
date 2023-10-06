@@ -1,5 +1,4 @@
 import os
-import pandas as pd
 import time
 import shutil
 from tagger.wd14_tagger import Wd14Tagger
@@ -13,10 +12,10 @@ import numpy as np
 import huggingface_hub
 import onnxruntime as rt
 import cv2
-import pandas as pd
 import numpy as np
 import time
 import shutil
+from scraper.base_scraper import get_tags_for_file, save_tags_for_file
 
 blacklist = ["loli", "comic", "disembodied_penis" ]
 supported_extensions = [".jpeg", ".jpg", ".png"]
@@ -35,11 +34,25 @@ classifiers = [
     ]
 
 # get tags merged from multiple tagging models and caret file
-def tag_image(image_path, target_path,  caret_path = None, caret_target_path = None):
+def tag_image(image_path, caret_path = None):
+
+    if image_path is None or os.path.isfile(image_path) == False:
+        return
+    
+    if caret_path is None:
+        new_path = image_path[0:image_path.rindex('.')] + ".txt"
+        if os.path.isfile(new_path):
+            caret_path=new_path
+
+    _target_folder = target_folder
+    if _target_folder is None:
+        _target_folder = os.path.dirname(image_path)
 
     tags = {}
-    if caret_target_path != None and caret_path != None and os.path.isfile(caret_path):
-        columns = pd.read_csv(caret_path).columns.tolist()
+    if caret_path is not None and os.path.isfile(caret_path) == True:
+        columns = get_tags_for_file(caret_path)
+        if columns is None:
+            columns = []
         columns = [sub.strip().replace(' ', '_').replace("(","").replace(")","") for sub in columns]
         for tag in columns:
             tags[tag] = default_tag_weight
@@ -67,15 +80,18 @@ def tag_image(image_path, target_path,  caret_path = None, caret_target_path = N
             if tag.replace(" ", "_") == sorted_tag:
              raise Exception("Found blacklisted tag " + tag + " in " + image_path)
 
-    caret_file = open(caret_target_path, 'w')
-    content = ", ".join(sorted_tags).replace("_", " ").replace("(","").replace(")","")
-    caret_file.write(content)
-    caret_file.close()
+    if caret_path is None:
+        caret_path = image_path[0:image_path.rindex('.')] + ".txt"
+    
+    print("Saving tags to " + caret_path)
+    caret_file = save_tags_for_file(sorted_tags, caret_path)
 
-    print("Moving " + image_path + " to " + target_path)
-    shutil.move(image_path, target_path)
-    if os.path.isfile(caret_path):
-        os.remove(caret_path)
+    if target_folder is not None:
+        target_path = os.path.join(_target_folder, os.path.basename(image_path))
+        caret_target_path = os.path.join(_target_folder, os.path.basename(caret_path))
+        print("Moving " + image_path + " to " + target_path)
+        shutil.move(image_path, target_path)
+        shutil.move(caret_file, caret_target_path)
 
     print("Tagged " + image_path)
 
@@ -88,7 +104,7 @@ def tag():
 
         items = os.listdir(folder)
         for item in items:
-            if (len(os.listdir(target_folder))) > max_in_folder:
+            if target_folder is not None and (len(os.listdir(target_folder))) > max_in_folder:
                 print("Exceed maximum number of files in folder, sleeping")
                 while len(os.listdir(target_folder)) > max_in_folder:
                     time.sleep(10)
@@ -102,11 +118,8 @@ def tag():
             image_path = os.path.join(folder, filename)
             caret_path = os.path.join(folder, filename[0:filename.rindex('.')] + ".txt")
 
-            target_path = os.path.join(target_folder, os.path.basename(filename))
-            caret_target_path = os.path.join(target_folder, filename[0:filename.rindex('.')] + ".txt")
-
             try:
-                tag_image(image_path, target_path, caret_path, caret_target_path)
+                tag_image(image_path, caret_path)
             except Exception as e:
                 print("Failed to tag file " + item)
                 print(e)
