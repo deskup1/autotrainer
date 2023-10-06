@@ -95,7 +95,8 @@ class BooruScraper(Scraper):
 
                         # get tags
                         filetags = get_tags_for_file(downloaded_file_path)
-
+                        if filetags is None:
+                            filetags = []
                         # add tags from prompt
                         if self.prepend_prompt_tags:
                             tags.reverse()
