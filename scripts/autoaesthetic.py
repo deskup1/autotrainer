@@ -10,10 +10,10 @@ from scraper.base_scraper import save_tags_for_file, get_tags_for_file
 
 anime_aesthetic_pass_treshold = 0.9
 anime_aesthetic_quality_tresholds = [
-    (1, 0.96, "best quality"), 
-    (0.96, 0.90, "good quality"),
-    (0.60, 0.50, "bad quality"),
-    (0.50, 0.00, "worst quality"),
+    (1, 0.94, "best quality"), 
+    (0.95, 0.90, "good quality"),
+    (0.50, 0.25, "bad quality"),
+    (0.25, 0.00, "worst quality"),
     ]
 
 cafeai_pass_treshold = 0.9

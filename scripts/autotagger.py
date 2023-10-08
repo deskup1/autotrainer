@@ -28,6 +28,9 @@ max_in_folder = 2000
 default_tag_weight = 0.44
 min_tag_treshold = 0.43
 
+include_character_tags = True
+include_rating_tags = True
+
 classifiers = [
     Wd14Tagger("SmilingWolf/wd-v1-4-vit-tagger-v2"),
     Wd14Tagger("SmilingWolf/wd-v1-4-convnextv2-tagger-v2"),
@@ -60,12 +63,32 @@ def tag_image(image_path, caret_path = None):
     for classifier in classifiers:
         print("Tagging " + image_path + " using " + classifier.name)
         results = classifier.tags(image_path)
+
+        # set rating tag
+        if include_rating_tags:
+            rating_tags = list(results[2].items())
+            rating = rating_tags[0]
+            for rating_tag in rating_tags:
+                if rating_tag[1] > rating[1]:
+                    rating = rating_tag
+
+            if rating[0] == "general" or rating[0] == "sensitive":
+                tags["sfw"] = rating[1] + tags.get("sfw", 0)
+            elif rating[0] == "explicit" or rating[0] == "questionable":
+                tags["nsfw"] = rating[1] + tags.get("nsfw", 0)
+
+
+        # set character tag
+        if include_character_tags:
+            character_tags = list(results[3].items())
+            for tag in character_tags:
+                updated_tag=tag[0].replace(' ', '_').replace("(","").replace(")","")
+                tags[updated_tag] =  tag[1] + tags.get(updated_tag, 0)
+
+        # set general tags
         for tag in results[4].keys():
             updated_tag=tag.replace(' ', '_').replace("(","").replace(")","")
-            if updated_tag in tags:
-                tags[updated_tag] = tags[updated_tag] + results[4][tag]
-            else:
-                tags[updated_tag] = results[4][tag]
+            tags[updated_tag] =  results[4][tag] + tags.get(updated_tag, 0)
     
     tags = sorted(tags.items(), key=lambda x:x[1], reverse=True)
     print(tags)
@@ -78,7 +101,7 @@ def tag_image(image_path, caret_path = None):
     for tag in blacklist:
         for sorted_tag in sorted_tags:
             if tag.replace(" ", "_") == sorted_tag:
-             raise Exception("Found blacklisted tag " + tag + " in " + image_path)
+                raise Exception("Found blacklisted tag " + tag + " in " + image_path)
 
     if caret_path is None:
         caret_path = image_path[0:image_path.rindex('.')] + ".txt"

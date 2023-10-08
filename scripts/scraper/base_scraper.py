@@ -31,7 +31,7 @@ class Scraper:
                  download_path: str = "images/download-cache",
                  max_files_in_download_path = 100,
                  target_path: str = "images/download", 
-                 max_files_in_target_path = None,
+                 max_files_in_target_path = 100,
                  prompts_path: str = "prompts.txt",
                  supported_extensions = [".jpeg", ".jpg", ".png"],
                  delay_between_downloads = 0.0,

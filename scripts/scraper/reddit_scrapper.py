@@ -61,7 +61,9 @@ class RedditScraper(Scraper):
                  prepend_prompt_tags = False,
                  file_postprocessors = [],
                  use_urllib = False,
-                 max_download_tries = 100
+                 max_download_tries = 100,
+                 max_files_in_download_path = 100,
+                 max_files_in_target_path = 100
                 ):
         
         self.prepend_prompt_tags = prepend_prompt_tags
@@ -78,7 +80,9 @@ class RedditScraper(Scraper):
                          prompts_path=prompts_path, 
                          delay_between_downloads=delay_between_downloads,
                          file_postprocessors=file_postprocessors,
-                         use_urllib=use_urllib
+                         use_urllib=use_urllib,
+                         max_files_in_download_path=max_files_in_download_path,
+                         max_files_in_target_path=max_files_in_target_path
                          )
         
     def parse(self, count, tags):

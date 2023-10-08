@@ -16,6 +16,8 @@ parser.add_argument("--db_file", help="path to db file", type=str, default=None)
 parser.add_argument("--use_aesthetic", help="use scraper with aesthetic filter", action='store_true')
 parser.add_argument("--aesthetic_anime_aesthetic_treshold", help="anime_aesthetic filter pass treshold (default:0.775)", type=float, default=0.775)
 parser.add_argument("--aesthetic_cafeai_pass_treshold", help="anime_aesthetic filter pass treshold (default:0.9)", type=float, default=0.9)
+parser.add_argument("--max_files_in_cache_folder", help="maximum files in cache folder, if exceeds then wait until space is available", type=int, default=100)
+parser.add_argument("--max_files_in_download_folder", help="maximum files in download folder, if exceeds then wait until space is available", type=int, default=None)
 parser.add_argument("--use_tagger", help="use scraper with tagger", action='store_true')
 parser.add_argument("--looped", help="run scraper in a loop", action='store_true')
 parser.add_argument("--prepend_prompt_tags", help="prepend tags from prompt file at the start of the caret file", action='store_true')
@@ -92,7 +94,10 @@ if __name__ == "__main__":
                                 prepend_prompt_tags=args.prepend_prompt_tags,
                                 app_id=args.reddit_app_id,
                                 app_key=args.reddit_app_key,
-                                use_urllib=args.use_urllib)
+                                use_urllib=args.use_urllib,
+                                max_files_in_download_path=args.max_files_in_cache_folder,
+                                max_files_in_target_path=args.max_files_in_download_folder,
+                                )
         if args.looped:
             scraper.start()
         else:
@@ -106,7 +111,10 @@ if __name__ == "__main__":
                            file_postprocessors=file_postproccesors,
                            prepend_prompt_tags=args.prepend_prompt_tags,
                            skip_tags=args.skip_tags,
-                           use_urllib=args.use_urllib)
+                           use_urllib=args.use_urllib,
+                           max_files_in_download_path=args.max_files_in_cache_folder,
+                           max_files_in_target_path=args.max_files_in_download_folder,
+                           )
     if args.looped:
         scraper.start()
     else:
